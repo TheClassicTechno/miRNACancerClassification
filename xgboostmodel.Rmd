@@ -5,14 +5,7 @@ date: "2022-07-30"
 output: html_document
 ---
 
----
-title: "randomforest3rdone"
-author: "Julia Huang"
-date: "2022-07-30"---
-title: "randomforest"
-author: "Julia H"
-date: "7/21/2021"
-output: html_document
+
 ---
 
 ```{r setup, include=FALSE}
@@ -21,10 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ---
-title: "miRcore R camp Random Forest Test"
-author: "julia huang"
-date: "updated July 20, 2021"
-output: html_document
+
 ---
 
 ```{r setup, include=FALSE}
@@ -169,7 +159,7 @@ colnames(brca_miR_data)[1] <- "Condition"
 
 ## Preparing Train and Test
 
-For this camp, we will use a 70/30 split between training and testing, meaning that 70% of the data is used to train the model, and the trained model is tested on the remaining 30%.
+For this camp, we will use a 70/30, 75/25, or 80/20 split between training and testing, meaning that x% of the data is used to train the model, and the trained model is tested on the remaining y%.
 
 Since each row represents one patient, we can just take a random sample of numbers in the range of the number of rows.
 
@@ -180,7 +170,7 @@ train_samples <- sample(1:num_rows, round(0.8 * num_rows), replace = FALSE)
 train_samples
 ```
 
-Let's break this down. The first argument for the sample command is the range we want to select our samples from. In our case, that is all integers from 1 to the total number of rows. The second argument is how many values we want to sample. Because num_rows * 0.7 isn't an integer, we want to round it to the nearest integer. Finally, we don't want to draw the same sample twice, so we set replact to FALSE.
+Let's break this down. The first argument for the sample command is the range we want to select our samples from. In our case, that is all integers from 1 to the total number of rows. The second argument is how many values we want to sample. Because num_rows * (train5) isn't an integer, we want to round it to the nearest integer. Finally, we don't want to draw the same sample twice, so we set replact to FALSE.
 
 Additionally, we want to set the random seed (the value that determines how computer randomness works, since computer randomness isn't really random) to a set number so we can reproduce these results. If you don't want consistent results every time you run this script, you can comment out that line.
 
@@ -204,11 +194,11 @@ dim(train_data)
 dim(test_data)
 ```
 
-We have 120 cases in training and 52 in testing. There are 59 columns because we have our 58 miRNAs + 1 colummn for the condition.
+We have # cases in training and # in testing. There are a+1 columns because we have our a miRNAs + 1 colummn for the condition.
 
 ## Running the model
 
-Now that we have our train and test datasets, we can begin the machine learning. We will use random forests for this script.
+Now that we have our train and test datasets, we can begin the machine learning. We will use xgboost for this script.
 
 ```{r}
 train_data$Condition <- as.factor(train_data$Condition)
@@ -227,7 +217,7 @@ newData_x = xgb.DMatrix(data.matrix(train_data), missing = NA)
 train_predictions <- predict(brca_boost, newData_x)
 table(train_predictions, train_data$Condition)
 ```
-The model was 100% accurate. This is to be expected, as it already knew the answers!
+The model was very accurate. This is to be expected, as it already knew the answers!
 
 The real test of model performance is how it performs on external data it has never seen before. In this scenario, we want to use the testing data, which we separated from the training data earlier.
 
@@ -241,7 +231,7 @@ table(test_predictions, test_data$Condition)
 
 ```
 
-Only 1 error out of 52 cases - not bad!
+
 
 
 output: html_document
