@@ -1,0 +1,220 @@
+---
+title: "randomforest"
+author: "Julia Huang"
+date: "7/29/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#accuracy of full vs partial dataset
+```
+
+---
+title: "miRcore R camp Random Forest Test"
+author: "julia huang"
+date: "updated July 20, 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### (c)miRcore
+
+## Required Packages
+
+Run the following code chunk to load in all of the required packages for this code. If you do not have any of these packages installed, run `install.packages("packagename")` in the console, to knit html file.
+
+```{r}
+library(randomForest)
+```
+
+
+## Preparing Data
+
+### Reading in the data
+
+As with other txt files, we want to read in our data using the `read.table` function, specifying that we have a header and our first column is our row names. Make sure you have the file in the current working directory.
+
+```{r}
+setwd("C:/rcamp")
+getwd()
+brca_miR_data <- read.table("Full_BRCA_miR_data.txt", header = T, row.names = 1, stringsAsFactors = F)
+
+```
+
+### Selecting Significant miRNAs
+
+For our Random Forest, we only want to use the statistically significant miRNAs (p-value < 0.05) for input. We will loop through every miRNA, perform a t-test using that miRNA, and add it to our significant miRNAs vector if it is significant.
+
+```{r}
+sig_miRs <- vector()
+num_miRNAs <- length(brca_miR_data)
+tumor_samples <- 1:86#1:86 for full brca
+control_samples <-87:172 #87:172 for full brca
+for(i in 1:num_miRNAs)
+{
+  tumor_vector <- brca_miR_data[i, tumor_samples]
+  control_vector <- brca_miR_data[i, control_samples]
+  p_value <- t.test(tumor_vector, control_vector)$p.value
+  #print(p_value)
+  #print(p_value < 0.05)
+  if(!is.na(p_value) && p_value < 0.001)
+  {
+    sig_miRs <- c(sig_miRs, i)
+  }
+}
+sig_miRs
+
+```
+
+Note how we first have to check that our p value is not NA. This is because comparing NA to 0.001 produces an error. Because of how R evaluates code, it won't even try the second comparison in the and statement if the first test turns out to be false (if p_value is NA). 
+
+```{r}
+length(sig_miRs)
+```
+
+We have 58 statistically significant miRNAs. Now we just need to select only these rows from our data.
+
+```{r}
+brca_miR_data <- brca_miR_data[sig_miRs,]
+```
+
+```{r}
+dim(brca_miR_data)
+```
+
+We have successfuly shrunk our data down to 58 miRNAs. 
+
+### Transposing
+
+Because we want each input into the machine learning model to be an individual patient instead of an individual miRNA, we need to `transpose` the data (switch rows and columns) before continuing.
+
+This can be done using the `t()` function.
+
+```{r}
+brca_miR_data <- t(brca_miR_data)
+dim(brca_miR_data)
+```
+
+To illustrate the effects of this command, we can view the first few rows and columns of the data.
+
+```{r}
+brca_miR_data[1:10, 1:5]
+```
+
+### Adding Condition Column
+
+For our final input into the machine learning model, we want to make the first column have information on whether the cell was a tumor cell or a control cell. 
+
+First, we want to extract the rownames from our dataframe. We also want to clear the existing rownames. 
+
+```{r}
+conditions <- rownames(brca_miR_data)
+rownames(brca_miR_data) <- vector()
+```
+
+Next, we want to rename each patient to be either `Tumor` or `Control`, as we don't care which number patient they are anymore.
+
+```{r}
+for(i in 1:length(conditions))
+{
+  if(grepl("Tumor", conditions[i], fixed = TRUE) == TRUE)
+  {
+    conditions[i] <- "Tumor"
+  }
+  else {
+    conditions[i] <- "Control"
+  }
+}
+```
+
+What this does is checks if `Tumor` is in each condition. If it is, it renames that condition to just `Tumor`. Otherwise, it renames it to just `Control`. 
+
+Now that we have the conditions, we want to add this as a column to our original dataset.
+
+```{r}
+brca_miR_data <- as.data.frame(brca_miR_data)
+brca_miR_data <- cbind(conditions, brca_miR_data)
+brca_miR_data[1:10, 1:5]
+```
+
+Finally, we want to set the first column name to just `Condition`
+
+```{r}
+colnames(brca_miR_data)[1] <- "Condition"
+```
+
+
+## Preparing Train and Test
+
+For this camp, we will use a 70/30 split between training and testing, meaning that 70% of the data is used to train the model, and the trained model is tested on the remaining 30%.
+
+Since each row represents one patient, we can just take a random sample of numbers in the range of the number of rows.
+
+```{r}
+set.seed(123)
+num_rows <- length(conditions)
+train_samples <- sample(1:num_rows, round(0.8 * num_rows), replace = FALSE)
+train_samples
+```
+
+Let's break this down. The first argument for the sample command is the range we want to select our samples from. In our case, that is all integers from 1 to the total number of rows. The second argument is how many values we want to sample. Because num_rows * 0.7 isn't an integer, we want to round it to the nearest integer. Finally, we don't want to draw the same sample twice, so we set replact to FALSE.
+
+Additionally, we want to set the random seed (the value that determines how computer randomness works, since computer randomness isn't really random) to a set number so we can reproduce these results. If you don't want consistent results every time you run this script, you can comment out that line.
+
+Now that we have our samples, we can create our training matrix, which is just the rows from train_samples. To help the randomForest function later, we need to replace all dashes with periods.
+
+```{r}
+colnames(brca_miR_data) <- gsub("-",".",colnames(brca_miR_data))
+train_data <- brca_miR_data[train_samples,]
+```
+
+For the testing data, we just want the rows that weren't included in the training data. The `-` operator can help us with this. We also need to modify the column names again.
+
+```{r}
+test_data <- brca_miR_data[-train_samples,]
+```
+
+What this does is it takes all the rows that are not in train_samples.
+
+```{r}
+dim(train_data)
+dim(test_data)
+```
+
+We have 120 cases in training and 52 in testing. There are 59 columns because we have our 58 miRNAs + 1 colummn for the condition.
+
+## Running the model
+
+Now that we have our train and test datasets, we can begin the machine learning. We will use random forests for this script.
+
+```{r}
+train_data$Condition <- as.factor(train_data$Condition)
+test_data$Condition <- as.factor(test_data$Condition)
+brca_forest <- randomForest(Condition ~ .,
+                            ntree = 200,
+                            data = train_data)
+```
+
+Let's see how our model performed on the training dataset:
+
+```{r}
+train_predictions <- predict(brca_forest, train_data)
+table(train_predictions, train_data$Condition)
+```
+The model was 100% accurate. This is to be expected, as it already knew the answers!
+
+The real test of model performance is how it performs on external data it has never seen before. In this scenario, we want to use the testing data, which we separated from the training data earlier.
+
+```{r}
+test_predictions <- predict(brca_forest, test_data)
+table(test_predictions, test_data$Condition)
+```
+
+Only 1 error out of 52 cases - not bad!
+
