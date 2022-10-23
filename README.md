@@ -1,7 +1,8 @@
 # miRNACancerClassification
 developed by Julia Huang
 
-This Github Repo includes developed, trained, and optimized Random Forest and XGBoost Models, written in RStudio and developed using the R programming language.
+This Github Repo includes developed, trained, and optimized Random Forest and XGBoost Models, written in RStudio and developed using the R programming language. <br>
+
 It also includes models' binary classification results and datasets of six cancers:
 
 BRCA.txt <br>
