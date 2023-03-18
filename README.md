@@ -1,7 +1,7 @@
 # miRNACancerClassification
 
 
-This Github Repo includes developed, trained, and optimized Random Forest and XGBoost Models, written in RStudio and developed using the R programming language. <br>
+This Github Repo includes Random Forest and XGBoost Models that we developed, trained, and optimized. Written in RStudio and developed using the R programming language. <br>
 
 It also includes models' binary classification results and datasets of six cancers:
 
