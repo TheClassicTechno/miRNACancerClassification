@@ -39,7 +39,7 @@ This research project applies supervised machine learning to classify breast can
 -  Models successfully distinguish tumor from control samples
 -  58 miRNA biomarkers identified with statistical significance
 
-## 🚀 Installation & Usage
+## Installation & Usage
 
 ### Prerequisites
 ```r
