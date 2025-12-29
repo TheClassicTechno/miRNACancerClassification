@@ -1,5 +1,7 @@
 # miRNACancerClassification
 
+our project after Umich R Camp.
+our paper published in PGHR Johns Hopkins journal: https://www.pghr.org/post/a-universal-efficient-deep-learning-approach-to-various-cancer-detections-from-mirna-expressions
 
 This Github Repo includes Random Forest and XGBoost Models that we developed, trained, and optimized. Written in RStudio and developed using the R programming language. <br>
 
